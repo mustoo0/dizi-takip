@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Dizi Takip</title>
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://w3.org' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2318181b'/><text y='.9em' font-size='70' x='14'>🎬</text></svg>">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #09090b; color: #fafafa; padding: 16px; max-width: 540px; margin: 0 auto; padding-bottom: 60px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 12px 0 20px; border-bottom: 1px solid #27272a; margin-bottom: 20px; }
+    h1 { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .status { font-size: 12px; color: #22c55e; background: rgba(34, 197, 94, 0.12); padding: 4px 10px; border-radius: 20px; }
+    .card { background: #18181b; border: 1px solid #27272a; border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .show-title { font-size: 19px; font-weight: 700; color: #fff; }
+    .delete-btn { background: none; border: none; color: #71717a; font-size: 18px; cursor: pointer; padding: 4px; }
+    .delete-btn:hover { color: #ef4444; }
+    .stats { display: flex; gap: 10px; margin-bottom: 14px; }
+    .stat-box { flex: 1; background: #09090b; border: 1px solid #27272a; border-radius: 12px; padding: 10px; text-align: center; }
+    .stat-label { font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-val { font-size: 22px; font-weight: 700; margin-top: 2px; color: #38bdf8; }
+    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    button { border: none; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.15s; }
+    button:active { transform: scale(0.97); }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #27272a; color: #e4e4e7; }
+    .btn-secondary:hover { background: #3f3f46; }
+    .btn-watch { width: 100%; background: #16a34a; color: white; font-size: 15px; padding: 14px; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; border-radius: 12px; font-weight: 600; margin-bottom: 12px; }
+    .btn-watch:hover { background: #15803d; }
+    .minute-row { display: flex; gap: 8px; align-items: center; background: #09090b; padding: 8px 12px; border-radius: 12px; border: 1px solid #27272a; }
+    .minute-row span { font-size: 13px; color: #a1a1aa; white-space: nowrap; }
+    .minute-row input { width: 65px; background: #18181b; border: 1px solid #3f3f46; color: white; padding: 6px 8px; border-radius: 8px; text-align: center; font-size: 14px; }
+    .minute-row button { padding: 6px 12px; font-size: 13px; background: #3f3f46; color: white; margin-left: auto; }
+    .add-section { margin-top: 28px; border-top: 1px solid #27272a; padding-top: 20px; }
+    .add-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #e4e4e7; }
+    .input-group { display: flex; flex-direction: column; gap: 10px; }
+    input[type="text"], input[type="url"], input[type="number"] { background: #18181b; border: 1px solid #27272a; color: white; padding: 12px; border-radius: 10px; font-size: 14px; outline: none; }
+    input:focus { border-color: #2563eb; }
+    .row-2 { display: flex; gap: 10px; }
+    .row-2 input { flex: 1; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🎬 Dizi Takip</h1>
+    <span class="status" id="syncStatus">Bağlanıyor...</span>
+  </header>
+
+  <div id="showsList"></div>
+
+  <div class="add-section">
+    <div class="add-title">+ Yeni Dizi Ekle</div>
+    <div class="input-group">
+      <input type="text" id="newName" placeholder="Dizi Adı (örn: Dexter)">
+      <input type="url" id="newUrl" placeholder="Dizi Sayfası Linki (https://...)">
+      <div class="row-2">
+        <input type="number" id="newSeason" placeholder="Sezon (1)" min="1" value="1">
+        <input type="number" id="newEpisode" placeholder="Bölüm (1)" min="1" value="1">
+      </div>
+      <button class="btn-primary" onclick="addShow()">Listeye Ekle</button>
+    </div>
+  </div>
+
+  <script>
+    const DB_URL = "https://firebaseio.com";
+    let showsData = {};
+
+    const defaultData = {
+      mentalist: {
+        name: "The Mentalist",
+        url: "https://filmmakinesi.to",
+        season: 1,
+        episode: 2,
+        minute: 0
+      }
+    };
+
+    async function fetchShows() {
+      try {
+        const res = await fetch(DB_URL);
+        const data = await res.json();
+        if (!data) {
+          showsData = defaultData;
+          await saveAll();
+        } else {
+          showsData = data;
+        }
+        document.getElementById("syncStatus").innerText = "● Canlı Senkronize";
+        render();
+      } catch (e) {
+        document.getElementById("syncStatus").innerText = "Bağlantı Hatası";
+      }
+    }
+
+    async function saveAll() {
+      document.getElementById("syncStatus").innerText = "Kaydediliyor...";
+      await fetch(DB_URL, {
+        method: "PUT",
+        body: JSON.stringify(showsData)
+      });
+      document.getElementById("syncStatus").innerText = "● Canlı Senkronize";
+      render();
+    }
+
+    function changeEpisode(id, delta) {
+      showsData[id].episode = Math.max(1, (showsData[id].episode || 1) + delta);
+      showsData[id].minute = 0;
+      saveAll();
+    }
+
+    function changeSeason(id, delta) {
+      showsData[id].season = Math.max(1, (showsData[id].season || 1) + delta);
+      if (delta > 0) showsData[id].episode = 1;
+      showsData[id].minute = 0;
+      saveAll();
+    }
+
+    function saveMinute(id) {
+      const val = parseInt(document.getElementById("min-" + id).value) || 0;
+      showsData[id].minute = Math.max(0, val);
+      saveAll();
+    }
+
+    function addShow() {
+      const name = document.getElementById("newName").value.trim();
+      const url = document.getElementById("newUrl").value.trim();
+      const season = parseInt(document.getElementById("newSeason").value) || 1;
+      const episode = parseInt(document.getElementById("newEpisode").value) || 1;
+      if (!name) return alert("Dizi adını yaz knk!");
+
+      const id = "show_" + Date.now();
+      showsData[id] = { name, url: url || "https://filmmakinesi.to", season, episode, minute: 0 };
+      document.getElementById("newName").value = "";
+      document.getElementById("newUrl").value = "";
+      saveAll();
+    }
+
+    function deleteShow(id) {
+      if (confirm(showsData[id].name + " silinsin mi?")) {
+        delete showsData[id];
+        saveAll();
+      }
+    }
+
+    function render() {
+      const container = document.getElementById("showsList");
+      container.innerHTML = "";
+      Object.keys(showsData).forEach(id => {
+        const s = showsData[id];
+        const minText = s.minute > 0 ? ` (${s.minute}. dk)` : "";
+        container.innerHTML += `
+          <div class="card">
+            <div class="card-header">
+              <div class="show-title">${s.name}</div>
+              <button class="delete-btn" onclick="deleteShow('${id}')">✕</button>
+            </div>
+            <div class="stats">
+              <div class="stat-box">
+                <div class="stat-label">Sezon</div>
+                <div class="stat-val">${s.season}</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Kaldığın Bölüm</div>
+                <div class="stat-val">${s.episode}${minText}</div>
+              </div>
+            </div>
+            <a href="${s.url}" target="_blank" class="btn-watch">▶ İzlemeye Git (${s.season}. Sezon ${s.episode}. Bölüm)</a>
+            <div class="controls">
+              <button class="btn-primary" onclick="changeEpisode('${id}', 1)">Bölüm +1 (Bitirdim)</button>
+              <button class="btn-secondary" onclick="changeSeason('${id}', 1)">Yeni Sezon +1</button>
+              <button class="btn-secondary" onclick="changeEpisode('${id}', -1)">Bölüm -1</button>
+              <button class="btn-secondary" onclick="changeSeason('${id}', -1)">Sezon -1</button>
+            </div>
+            <div class="minute-row">
+              <span>Yarıda mı kaldı? Dk:</span>
+              <input type="number" id="min-${id}" value="${s.minute || 0}" min="0">
+              <button onclick="saveMinute('${id}')">Kaydet</button>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    fetchShows();
+    setInterval(fetchShows, 10000);
+  </script>
+</body>
+</html>
