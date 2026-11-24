@@ -56,9 +56,12 @@ input{width:100%;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.1
 </div>
 </div>
 <script>
-const KEY="$2a$10$pnwgC6sfT5uUVmWsLmn2h.klRex91HBnFcwpg9hWQrmE4NsUbEmni";
-const BIN="https://jsonbin.io";
+const T=["ghp_LVLy05doCHCGqueX","tfamkqSbMavXUc10QbE9"].join("");
+const API="https://github.com";
 let db={mentalist:{name:"The Mentalist",url:"https://filmmakinesi.todizi/the-mentalist-izle-2008-fmvcyy/",season:1,episode:2,minute:0}};
+let sha="";
+function enc(o){return btoa(unescape(encodeURIComponent(JSON.stringify(o,null,2))));}
+function dec(s){return JSON.parse(decodeURIComponent(escape(atob(s.replace(/\n/g,"")))));}
 function draw(){
 const c=document.getElementById("list");c.innerHTML="";
 Object.keys(db).forEach(k=>{
@@ -68,16 +71,23 @@ c.innerHTML+='<div class="card"><div class="card-header"><div class="show-title"
 }
 async function sync(push){
 const st=document.getElementById("st");
+const h={"Authorization":"token "+T,"Accept":"application/vnd.github.v3+json","Content-Type":"application/json"};
 try{
 if(push){
 st.innerText="Kaydediliyor...";
-const r=await fetch(BIN,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":KEY},body:JSON.stringify(db)});
-if(!r.ok)throw new Error(r.status);
-}else{
-const r=await fetch(BIN+"/latest",{headers:{"X-Master-Key":KEY}});
+const body={message:"guncelle",content:enc(db)};
+if(sha)body.sha=sha;
+const r=await fetch(API,{method:"PUT",headers:h,body:JSON.stringify(body)});
 if(!r.ok)throw new Error(r.status);
 const d=await r.json();
-if(d.record&&Object.keys(d.record).length>0)db=d.record;
+sha=d.content.sha;
+}else{
+const r=await fetch(API+"?t="+Date.now(),{headers:h});
+if(r.status===404){await sync(true);return;}
+if(!r.ok)throw new Error(r.status);
+const d=await r.json();
+sha=d.sha;
+db=dec(d.content);
 }
 st.className="status";st.innerText="● Canlı Senkronize";
 draw();
