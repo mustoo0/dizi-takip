@@ -56,8 +56,10 @@ input{width:100%;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.1
 </div>
 </div>
 <script>
-const DB="https://firebaseio.com";
+const KEY="$2a$10$pnwgC6sfT5uUVmWsLmn2h.klRex91HBnFcwpg9hWQrmE4NsUbEmni";
+const API="https://jsonbin.io";
 let db={mentalist:{name:"The Mentalist",url:"https://filmmakinesi.todizi/the-mentalist-izle-2008-fmvcyy/",season:1,episode:2,minute:0}};
+let binId=localStorage.getItem("dizi_bin_id");
 function draw(){
 const c=document.getElementById("list");c.innerHTML="";
 Object.keys(db).forEach(k=>{
@@ -65,26 +67,33 @@ const s=db[k];
 c.innerHTML+='<div class="card"><div class="card-header"><div class="show-title">'+s.name+'</div><button class="del-btn" onclick="del(\''+k+'\')">✕</button></div><div class="stats"><div class="stat-box"><div class="stat-lbl">SEZON</div><div class="stat-val">'+s.season+'</div></div><div class="stat-box"><div class="stat-lbl">BÖLÜM</div><div class="stat-val">'+s.episode+'</div></div><div class="stat-box"><div class="stat-lbl">DAKİKA</div><div class="stat-val min-val">'+(s.minute||0)+' dk</div></div></div><a href="'+s.url+'" target="_blank" class="btn-watch">▶ İzlemeye Git ('+s.season+'. Sezon '+s.episode+'. Bölüm)</a><div class="min-box"><span>⏱ Kaldığın Dakika:</span><div class="min-act"><input type="number" id="m-'+k+'" value="'+(s.minute||0)+'" min="0"><button class="btn-min" onclick="sMin(\''+k+'\')">Dk Kaydet</button></div></div><div class="controls"><button class="btn-pri" onclick="cEpi(\''+k+'\',1)">✓ Bölüm +1</button><button class="btn-sec" onclick="cSea(\''+k+'\',1)">Yeni Sezon +1</button><button class="btn-sec" onclick="cEpi(\''+k+'\',-1)">Bölüm -1</button><button class="btn-sec" onclick="cSea(\''+k+'\',-1)">Sezon -1</button></div></div>';
 });
 }
-function sync(push){
+async function getBin(){
+if(binId)return binId;
+const r=await fetch("https://jsonbin.io",{headers:{"X-Master-Key":KEY}});
+const l=await r.json();
+const f=Array.isArray(l)&&l.find(b=>b.snippetMeta&&b.snippetMeta.name==="dizi-takip-db");
+if(f){binId=f.record;localStorage.setItem("dizi_bin_id",binId);return binId;}
+const cr=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","X-Master-Key":KEY,"X-Bin-Name":"dizi-takip-db","X-Bin-Private":"true"},body:JSON.stringify(db)});
+const cd=await cr.json();
+binId=cd.metadata.id;localStorage.setItem("dizi_bin_id",binId);return binId;
+}
+async function sync(push){
 const st=document.getElementById("st");
-const x=new XMLHttpRequest();
-x.open(push?"PUT":"GET",DB+"?t="+Date.now(),true);
-x.timeout=6000;
-x.onload=function(){
-if(x.status>=200&&x.status<300){
-if(!push){
-const d=JSON.parse(x.responseText);
-if(d&&Object.keys(d).length>0)db=d;else sync(true);
+try{
+const id=await getBin();
+if(push){
+st.innerText="Kaydediliyor...";
+const r=await fetch(API+"/"+id,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":KEY},body:JSON.stringify(db)});
+if(!r.ok)throw 0;
+}else{
+const r=await fetch(API+"/"+id+"/latest",{headers:{"X-Master-Key":KEY}});
+if(!r.ok)throw 0;
+const d=await r.json();
+if(d.record&&Object.keys(d.record).length>0)db=d.record;
 }
 st.className="status";st.innerText="● Canlı Senkronize";
 draw();
-}else{
-st.className="status err";st.innerText="Hata Kodu: "+x.status;
-}
-};
-x.onerror=function(){st.className="status err";st.innerText="Ağ/DPI Engeli";};
-x.ontimeout=function(){st.className="status err";st.innerText="Zaman Aşımı";};
-x.send(push?JSON.stringify(db):null);
+}catch(e){st.className="status err";st.innerText="● Bağlantı Hatası";}
 }
 function cEpi(k,d){db[k].episode=Math.max(1,(db[k].episode||1)+d);db[k].minute=0;draw();sync(true);}
 function cSea(k,d){db[k].season=Math.max(1,(db[k].season||1)+d);if(d>0)db[k].episode=1;db[k].minute=0;draw();sync(true);}
@@ -95,7 +104,7 @@ db["s_"+Date.now()]={name:n,url:document.getElementById("nUrl").value.trim()||"h
 document.getElementById("nName").value="";document.getElementById("nUrl").value="";draw();sync(true);
 }
 function del(k){if(confirm(db[k].name+" silinsin mi?")){delete db[k];draw();sync(true);}}
-draw();sync(false);setInterval(()=>sync(false),7000);
+draw();sync(false);setInterval(()=>sync(false),10000);
 </script>
 </body>
 </html>
