@@ -1,294 +1,97 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <title>Dizi Takip v2</title>
-  <meta name="theme-color" content="#090d16">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://w3.org' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231e293b'/><text y='.9em' font-size='70' x='14'>🎬</text></svg>">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body {
-      background: radial-gradient(circle at top left, #1e1b4b, #090d16 55%, #05070c 100%);
-      background-attachment: fixed;
-      color: #f8fafc;
-      padding: 16px;
-      max-width: 540px;
-      margin: 0 auto;
-      padding-bottom: 80px;
-      min-height: 100vh;
-    }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 18px;
-      background: rgba(255, 255, 255, 0.06);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      border-radius: 18px;
-      margin-bottom: 20px;
-    }
-    h1 { font-size: 19px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .status { font-size: 12px; font-weight: 600; color: #4ade80; background: rgba(74, 222, 128, 0.15); border: 1px solid rgba(74, 222, 128, 0.3); padding: 5px 11px; border-radius: 20px; }
-    .status.err { color: #f87171; background: rgba(248, 113, 113, 0.15); border-color: rgba(248, 113, 113, 0.3); }
-    .card {
-      background: rgba(255, 255, 255, 0.06);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 22px;
-      padding: 20px;
-      margin-bottom: 18px;
-      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
-    }
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .show-title { font-size: 20px; font-weight: 700; color: #fff; }
-    .delete-btn { background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12); color: #94a3b8; width: 32px; height: 32px; border-radius: 10px; font-size: 14px; cursor: pointer; }
-    .delete-btn:hover { background: rgba(239, 68, 68, 0.25); color: #f87171; }
-    .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-    .stat-box { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 10px 6px; text-align: center; }
-    .stat-label { font-size: 11px; color: #94a3b8; font-weight: 600; }
-    .stat-val { font-size: 21px; font-weight: 700; margin-top: 3px; color: #38bdf8; }
-    .stat-val.min-val { color: #c084fc; }
-    .btn-watch {
-      width: 100%;
-      background: linear-gradient(135deg, #2563eb, #4f46e5);
-      color: white;
-      font-size: 15px;
-      padding: 14px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
-      border-radius: 14px;
-      font-weight: 600;
-      margin-bottom: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    .minute-box {
-      background: rgba(147, 51, 234, 0.15);
-      border: 1px solid rgba(192, 132, 252, 0.4);
-      padding: 12px 14px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-    .minute-box span { font-size: 13.5px; color: #f3e8ff; font-weight: 600; }
-    .minute-actions { display: flex; align-items: center; gap: 8px; }
-    .minute-actions input {
-      width: 72px;
-      background: rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(192, 132, 252, 0.5);
-      color: #fff;
-      padding: 9px;
-      border-radius: 10px;
-      text-align: center;
-      font-size: 15px;
-      font-weight: 700;
-    }
-    .btn-min { background: #9333ea; color: white; padding: 9px 14px; border-radius: 10px; font-size: 13px; border: none; font-weight: 600; cursor: pointer; }
-    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    button { border: none; border-radius: 13px; padding: 12px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: 0.15s; }
-    button:active { transform: scale(0.96); }
-    .btn-primary { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }
-    .btn-secondary { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.12); }
-    .add-card {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 22px;
-      padding: 20px;
-      margin-top: 24px;
-    }
-    .add-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: #f1f5f9; }
-    .input-group { display: flex; flex-direction: column; gap: 12px; }
-    .field-label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px; font-weight: 600; }
-    input[type="text"], input[type="url"], input[type="number"] {
-      width: 100%;
-      background: rgba(0, 0, 0, 0.45);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: white;
-      padding: 12px;
-      border-radius: 12px;
-      font-size: 14px;
-      outline: none;
-    }
-    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .btn-add { background: linear-gradient(135deg, #0ea5e9, #2563eb); color: white; padding: 14px; font-size: 14.5px; margin-top: 4px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Dizi Takip v3</title>
+<meta name="theme-color" content="#090d16">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{background:radial-gradient(circle at top left,#1e1b4b,#090d16 55%,#05070c 100%);background-attachment:fixed;color:#f8fafc;padding:16px;max-width:540px;margin:0 auto;padding-bottom:80px;min-height:100vh}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:rgba(255,255,255,.06);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.14);border-radius:18px;margin-bottom:20px}
+h1{font-size:19px;font-weight:700}
+.status{font-size:12px;font-weight:600;color:#4ade80;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);padding:5px 11px;border-radius:20px}
+.status.err{color:#f87171;background:rgba(248,113,113,.15);border-color:rgba(248,113,113,.3)}
+.card{background:rgba(255,255,255,.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);border-radius:22px;padding:20px;margin-bottom:18px;box-shadow:0 10px 35px rgba(0,0,0,.45)}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.show-title{font-size:20px;font-weight:700;color:#fff}
+.del-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#94a3b8;width:32px;height:32px;border-radius:10px;cursor:pointer}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-box{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:10px 6px;text-align:center}
+.stat-lbl{font-size:11px;color:#94a3b8;font-weight:600}
+.stat-val{font-size:21px;font-weight:700;margin-top:3px;color:#38bdf8}
+.min-val{color:#c084fc}
+.btn-watch{width:100%;background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;font-size:15px;padding:14px;display:flex;justify-content:center;align-items:center;text-decoration:none;border-radius:14px;font-weight:600;margin-bottom:14px;border:1px solid rgba(255,255,255,.2)}
+.min-box{background:rgba(147,51,234,.15);border:1px solid rgba(192,132,252,.4);padding:12px 14px;border-radius:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.min-box span{font-size:13.5px;color:#f3e8ff;font-weight:600}
+.min-act{display:flex;align-items:center;gap:8px}
+.min-act input{width:72px;background:rgba(0,0,0,.5);border:1px solid rgba(192,132,252,.5);color:#fff;padding:9px;border-radius:10px;text-align:center;font-size:15px;font-weight:700}
+.btn-min{background:#9333ea;color:#fff;padding:9px 14px;border-radius:10px;font-size:13px;border:none;font-weight:600;cursor:pointer}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{border:none;border-radius:13px;padding:12px;font-size:13.5px;font-weight:600;cursor:pointer}
+.btn-pri{background:rgba(56,189,248,.2);color:#7dd3fc;border:1px solid rgba(56,189,248,.4)}
+.btn-sec{background:rgba(255,255,255,.08);color:#e2e8f0;border:1px solid rgba(255,255,255,.12)}
+.add-card{background:rgba(255,255,255,.05);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:20px;margin-top:24px}
+.add-title{font-size:16px;font-weight:700;margin-bottom:14px}
+.inp-grp{display:flex;flex-direction:column;gap:12px}
+.lbl{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;font-weight:600}
+input{width:100%;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.15);color:#fff;padding:12px;border-radius:12px;font-size:14px;outline:none}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn-add{background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:14px;font-size:14.5px;margin-top:4px}
+</style>
 </head>
 <body>
-
-  <header>
-    <h1>🎬 Dizi Takip</h1>
-    <span class="status" id="syncStatus">Bağlanıyor...</span>
-  </header>
-
-  <div id="showsList"></div>
-
-  <div class="add-card">
-    <div class="add-title">+ Yeni Dizi Ekle</div>
-    <div class="input-group">
-      <div>
-        <span class="field-label">Dizi Adı</span>
-        <input type="text" id="newName" placeholder="Örn: Dexter, Sıfır Bir...">
-      </div>
-      <div>
-        <span class="field-label">İzlediğin Site Linki</span>
-        <input type="url" id="newUrl" placeholder="https://filmmakinesi.to...">
-      </div>
-      <div class="row-2">
-        <div>
-          <span class="field-label">Sezon Seç</span>
-          <input type="number" id="newSeason" min="1" value="1">
-        </div>
-        <div>
-          <span class="field-label">Bölüm Seç</span>
-          <input type="number" id="newEpisode" min="1" value="1">
-        </div>
-      </div>
-      <button class="btn-add" onclick="addShow()">Listeye Ekle</button>
-    </div>
-  </div>
-
-  <script>
-    const DB_URL = "https://firebaseio.com";
-    
-    let showsData = {
-      mentalist: {
-        name: "The Mentalist",
-        url: "https://filmmakinesi.todizi/the-mentalist-izle-2008-fmvcyy/",
-        season: 1,
-        episode: 2,
-        minute: 0
-      }
-    };
-
-    async function fetchShows() {
-      const statusEl = document.getElementById("syncStatus");
-      try {
-        const res = await fetch(DB_URL + "?t=" + Date.now());
-        if (!res.ok) throw new Error("İzin Kapalı");
-        const data = await res.json();
-        if (data && Object.keys(data).length > 0) {
-          showsData = data;
-        } else {
-          await saveAll();
-        }
-        statusEl.className = "status";
-        statusEl.innerText = "● Canlı Senkronize";
-      } catch (e) {
-        statusEl.className = "status err";
-        statusEl.innerText = "● Firebase İzin Kapalı";
-      }
-      render();
-    }
-
-    async function saveAll() {
-      const statusEl = document.getElementById("syncStatus");
-      render();
-      try {
-        statusEl.innerText = "Kaydediliyor...";
-        const res = await fetch(DB_URL, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(showsData)
-        });
-        if (!res.ok) throw new Error("Kayıt Hatası");
-        statusEl.className = "status";
-        statusEl.innerText = "● Canlı Senkronize";
-      } catch (e) {
-        statusEl.className = "status err";
-        statusEl.innerText = "● Firebase İzin Kapalı";
-      }
-    }
-
-    function changeEpisode(id, delta) {
-      showsData[id].episode = Math.max(1, (showsData[id].episode || 1) + delta);
-      showsData[id].minute = 0;
-      saveAll();
-    }
-
-    function changeSeason(id, delta) {
-      showsData[id].season = Math.max(1, (showsData[id].season || 1) + delta);
-      if (delta > 0) showsData[id].episode = 1;
-      showsData[id].minute = 0;
-      saveAll();
-    }
-
-    function saveMinute(id) {
-      const val = parseInt(document.getElementById("min-" + id).value) || 0;
-      showsData[id].minute = Math.max(0, val);
-      saveAll();
-    }
-
-    function addShow() {
-      const name = document.getElementById("newName").value.trim();
-      const url = document.getElementById("newUrl").value.trim();
-      const season = parseInt(document.getElementById("newSeason").value) || 1;
-      const episode = parseInt(document.getElementById("newEpisode").value) || 1;
-      if (!name) return alert("Önce dizi adını yaz knk!");
-
-      const id = "show_" + Date.now();
-      showsData[id] = { name, url: url || "https://filmmakinesi.to", season, episode, minute: 0 };
-      document.getElementById("newName").value = "";
-      document.getElementById("newUrl").value = "";
-      document.getElementById("newSeason").value = "1";
-      document.getElementById("newEpisode").value = "1";
-saveAll();
-}
-function deleteShow(id) {
-if (confirm(showsData[id].name + " listeden silinsin mi?")) {
-delete showsData[id];
-saveAll();
-}
-}
-function render() {
-const container = document.getElementById("showsList");
-container.innerHTML = "";
-Object.keys(showsData).forEach(id => {
-const s = showsData[id];
-const card = document.createElement("div");
-card.className = "card";
-card.innerHTML =
-'' +
-'' + s.name + '' +
-'✕' +
-'' +
-'' +
-'SEZON' + s.season + '' +
-'BÖLÜM' + s.episode + '' +
-'DAKİKA' + (s.minute || 0) + ' dk' +
-'' +
-'▶ İzlemeye Git (' + s.season + '. Sezon ' + s.episode + '. Bölüm)' +
-'' +
-'⏱ Kaldığın Dakika:' +
-'' +
-'' +
-'Dk Kaydet' +
-'' +
-'' +
-'' +
-'✓ Bölüm +1' +
-'Yeni Sezon +1' +
-'Bölüm -1' +
-'Sezon -1' +
-'';
-container.appendChild(card);
+<header><h1>🎬 Dizi Takip</h1><span class="status" id="st">Yükleniyor...</span></header>
+<div id="list"></div>
+<div class="add-card">
+<div class="add-title">+ Yeni Dizi Ekle</div>
+<div class="inp-grp">
+<div><span class="lbl">Dizi Adı</span><input type="text" id="nName" placeholder="Örn: Dexter, Sıfır Bir..."></div>
+<div><span class="lbl">İzlediğin Site Linki</span><input type="url" id="nUrl" placeholder="https://filmmakinesi.to..."></div>
+<div class="row2">
+<div><span class="lbl">Sezon Seç</span><input type="number" id="nSea" min="1" value="1"></div>
+<div><span class="lbl">Bölüm Seç</span><input type="number" id="nEpi" min="1" value="1"></div>
+</div>
+<button class="btn-add" onclick="add()">Listeye Ekle</button>
+</div>
+</div>
+<script>
+const DB="https://firebaseio.com";
+let db={mentalist:{name:"The Mentalist",url:"https://filmmakinesi.todizi/the-mentalist-izle-2008-fmvcyy/",season:1,episode:2,minute:0}};
+function draw(){
+const c=document.getElementById("list");c.innerHTML="";
+Object.keys(db).forEach(k=>{
+const s=db[k];
+c.innerHTML+='<div class="card"><div class="card-header"><div class="show-title">'+s.name+'</div><button class="del-btn" onclick="del(\''+k+'\')">✕</button></div><div class="stats"><div class="stat-box"><div class="stat-lbl">SEZON</div><div class="stat-val">'+s.season+'</div></div><div class="stat-box"><div class="stat-lbl">BÖLÜM</div><div class="stat-val">'+s.episode+'</div></div><div class="stat-box"><div class="stat-lbl">DAKİKA</div><div class="stat-val min-val">'+(s.minute||0)+' dk</div></div></div><a href="'+s.url+'" target="_blank" class="btn-watch">▶ İzlemeye Git ('+s.season+'. Sezon '+s.episode+'. Bölüm)</a><div class="min-box"><span>⏱ Kaldığın Dakika:</span><div class="min-act"><input type="number" id="m-'+k+'" value="'+(s.minute||0)+'" min="0"><button class="btn-min" onclick="sMin(\''+k+'\')">Dk Kaydet</button></div></div><div class="controls"><button class="btn-pri" onclick="cEpi(\''+k+'\',1)">✓ Bölüm +1</button><button class="btn-sec" onclick="cSea(\''+k+'\',1)">Yeni Sezon +1</button><button class="btn-sec" onclick="cEpi(\''+k+'\',-1)">Bölüm -1</button><button class="btn-sec" onclick="cSea(\''+k+'\',-1)">Sezon -1</button></div></div>';
 });
 }
-render();
-fetchShows();
-setInterval(fetchShows, 8000);
+async function sync(push){
+const st=document.getElementById("st");
+try{
+if(push){
+st.innerText="Kaydediliyor...";
+const r=await fetch(DB,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(db)});
+if(!r.ok)throw 0;
+}else{
+const r=await fetch(DB+"?t="+Date.now());
+if(!r.ok)throw 0;
+const d=await r.json();
+if(d&&Object.keys(d).length>0)db=d;else await sync(true);
+}
+st.className="status";st.innerText="● Canlı Senkronize";
+}catch(e){st.className="status err";st.innerText="● Bağlantı Hatası";}
+draw();
+}
+function cEpi(k,d){db[k].episode=Math.max(1,(db[k].episode||1)+d);db[k].minute=0;draw();sync(true);}
+function cSea(k,d){db[k].season=Math.max(1,(db[k].season||1)+d);if(d>0)db[k].episode=1;db[k].minute=0;draw();sync(true);}
+function sMin(k){db[k].minute=Math.max(0,parseInt(document.getElementById("m-"+k).value)||0);draw();sync(true);}
+function add(){
+const n=document.getElementById("nName").value.trim();if(!n)return alert("Dizi adı yaz!");
+db["s_"+Date.now()]={name:n,url:document.getElementById("nUrl").value.trim()||"https://filmmakinesi.to",season:parseInt(document.getElementById("nSea").value)||1,episode:parseInt(document.getElementById("nEpi").value)||1,minute:0};
+document.getElementById("nName").value="";document.getElementById("nUrl").value="";draw();sync(true);
+}
+function del(k){if(confirm(db[k].name+" silinsin mi?")){delete db[k];draw();sync(true);}}
+draw();sync(false);setInterval(()=>sync(false),8000);
+</script>
+</body>
+</html>
